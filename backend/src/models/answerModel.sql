@@ -1,0 +1,9 @@
+
+CREATE TABLE answers (
+    id SERIAL PRIMARY KEY NOT NULL,
+    answer TEXT NOT NULL,
+    userId INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    questionId INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+)
