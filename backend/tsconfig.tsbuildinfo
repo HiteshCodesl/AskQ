@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/utils/answertypes.ts","./src/utils/questiontypes.ts","./src/utils/usertypes.ts","./src/db/db.ts","./src/middleware/auth.ts","./src/routes/answerroute.ts","./src/routes/questionroute.ts","./src/routes/userroute.ts","./src/types/index.d.ts"],"version":"5.9.3"}
