@@ -1,0 +1,5 @@
+ALTER TABLE questions
+ADD COLUMN score INT DEFAULT 0;
+
+ALTER TABLE answers
+ADD COLUMN score INT DEFAULT 0;
