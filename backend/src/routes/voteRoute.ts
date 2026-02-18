@@ -6,7 +6,7 @@ import { answerVoteType } from "../utils/answerVoteType.js";
 
 const voteRoute = express.Router();
 
-voteRoute.post('/questionVote', AuthMiddleware, async (req, res) => {
+voteRoute.post('/questionVote/:questionId', AuthMiddleware, async (req, res) => {
     try{
     const parsedData = questionVoteType.safeParse(req.body);
 
@@ -16,37 +16,41 @@ voteRoute.post('/questionVote', AuthMiddleware, async (req, res) => {
             "error": "Please Send A Valid data"
         })
     }
-    const {questionId, voteType} = parsedData.data;
+    const { voteType} = parsedData.data;
+    const questionId = Number(req.params.questionId);
 
     const userId = req.id;
-
+    console.log("userId", userId, "questionId",questionId, "voteType", voteType )
     await pool.query("BEGIN");
-
-    const findVoteStatus = await pool.query('SELECT vote_type FROM questionvote WHERE questionid=$1, userid=$2 FOR UPDATE', [questionId, userId]);
+    console.log("Transcation Started");
+    const findVoteStatus = await pool.query('SELECT vote_type FROM questionvote WHERE questionid=$1 AND userid=$2 FOR UPDATE', [questionId, userId]);
+    console.log("FIndvoteState Done");
+    console.log("isVoteStatueFound", findVoteStatus.rows);
 
     if(findVoteStatus.rows.length === 0){
         // Add New Vote
         await pool.query('INSERT INTO questionvote(vote_type, questionid, userid) VALUES($1, $2, $3)', [voteType, questionId, userId]);
 
-        await pool.query('UPDATE questions SET score = $1', [voteType]);
+        await pool.query('UPDATE questions SET score = score + $1  WHERE id = $2', [voteType, questionId]);
     }else {
         const oldVoteType = findVoteStatus.rows[0].vote_type;
+        console.log("oldVoteType", oldVoteType);
         if(oldVoteType === voteType){
             //remove the vote 
-            await pool.query('DELETE FROM questionvote WHERE vote_type=$1, questionid=$2, userid=$3', [voteType, questionId, userId]);
+            await pool.query('DELETE FROM questionvote WHERE vote_type=$1 AND questionid=$2 AND userid=$3', [voteType, questionId, userId]);
 
-            await pool.query(`UPDATE question SET score - $1 WHERE id=$2`, [oldVoteType, questionId]);
+            await pool.query(`UPDATE questions SET score = score - $1 WHERE id=$2`, [oldVoteType, questionId]);
         }else{
         // change the vote
             const delta =  voteType - oldVoteType; 
-            await pool.query('UPDATE questionvote SET vote_type=$1 WHERE questionid=$2, userid=$3', [voteType, questionId, userId])
+            await pool.query('UPDATE questionvote SET vote_type=$1 WHERE questionid=$2 AND userid=$3', [voteType, questionId, userId])
 
-            await pool.query('UPDATE questions SET score + $1 WHERE id=$2', [delta, questionId]);
+            await pool.query('UPDATE questions SET score = score + $1 WHERE id=$2', [delta, questionId]);
         }
     };
 
     await pool.query("COMMIT");
-
+      
     return res.status(201).json({
         "success": true
     })
@@ -61,7 +65,7 @@ voteRoute.post('/questionVote', AuthMiddleware, async (req, res) => {
 });
 
 
-voteRoute.post('/answerVote', AuthMiddleware, async (req, res) => {
+voteRoute.post('/answerVote/:answerId', AuthMiddleware, async (req, res) => {
     try{
     const parsedData = answerVoteType.safeParse(req.body);
 
@@ -71,32 +75,36 @@ voteRoute.post('/answerVote', AuthMiddleware, async (req, res) => {
             "error": "Please Send A Valid data"
         })
     }
-    const {answerId, voteType} = parsedData.data;
+    const { voteType} = parsedData.data;
+
+    const answerId = Number(req.params.answerId);
 
     const userId = req.id;
 
+        console.log("userId", userId, "answerId",answerId, "voteType", voteType )
+
     await pool.query("BEGIN");
 
-    const findVoteStatus = await pool.query('SELECT vote_type FROM answervote WHERE answerid=$1, userid=$2 FOR UPDATE', [answerId, userId]);
+    const findVoteStatus = await pool.query('SELECT vote_type FROM answervote WHERE answerid=$1 AND userid=$2 FOR UPDATE', [answerId, userId]);
 
     if(findVoteStatus.rows.length === 0){
         // Add New Vote
         await pool.query('INSERT INTO answervote(vote_type, answerid, userid) VALUES($1, $2, $3)', [voteType, answerId, userId]);
 
-        await pool.query('UPDATE answers SET score = $1', [voteType]);
+        await pool.query('UPDATE answers SET score = score + $1 WHERE id = $2', [voteType, answerId]);
     }else {
         const oldVoteType = findVoteStatus.rows[0].vote_type;
         if(oldVoteType === voteType){
             //remove the vote 
-            await pool.query('DELETE FROM answervote WHERE vote_type=$1, answerid=$2, userid=$3', [voteType, answerId, userId]);
+            await pool.query('DELETE FROM answervote WHERE vote_type=$1 AND answerid=$2 AND userid=$3', [voteType, answerId, userId]);
 
-            await pool.query(`UPDATE answers SET score - $1 WHERE id=$2`, [oldVoteType, answerId]);
+            await pool.query(`UPDATE answers SET score = score - $1 WHERE id=$2`, [oldVoteType, answerId]);
         }else{
         // change the vote
             const delta =  voteType - oldVoteType; 
-            await pool.query('UPDATE answervote SET vote_type=$1 WHERE answerid=$2, userid=$3', [voteType, answerId, userId])
+            await pool.query('UPDATE answervote SET vote_type=$1 WHERE answerid=$2 AND userid=$3', [voteType, answerId, userId])
 
-            await pool.query('UPDATE answers SET score + $1 WHERE id=$2', [delta, answerId]);
+            await pool.query('UPDATE answers SET score = score + $1 WHERE id=$2', [delta, answerId]);
         }
     };
 
