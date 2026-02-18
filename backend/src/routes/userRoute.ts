@@ -1,5 +1,5 @@
 import express from "express"
-import { loginSchema, signupSchema } from "../Utils/userTypes.js";
+import { loginSchema, signupSchema } from "../utils/userTypes.js";
 import pool from "../db/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -20,9 +20,9 @@ userRoute.post('/signup', async (req, res) => {
 
         const { name, email, password } = parsedData.data;
 
-        const checkUser = await pool.query('SELECT * FROM users WHERE email= $1', [email]);
+        const checkUser = await pool.query('SELECT id,name,email FROM users WHERE email= $1', [email]);
 
-        if (checkUser) {
+        if (checkUser.rows.length > 0) {
             return res.status(401).json({
                 "success": false,
                 "error": "Already User, Try Login"
@@ -31,9 +31,9 @@ userRoute.post('/signup', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user = await pool.query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3)', [name, email, hashedPassword]);
+        const user = await pool.query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id,name,email', [name, email, hashedPassword]);
 
-        if (!user) {
+        if (user.rows.length === 0) {
             return res.status(401).json({
                 "success": false,
                 "error": "User Not Created, Error While Creating User"
@@ -42,7 +42,7 @@ userRoute.post('/signup', async (req, res) => {
 
         return res.status(201).json({
             "success": true,
-            "user": user
+            "user": user.rows[0]
         })
     } catch (error) {
         return res.status(401).json({
@@ -67,12 +67,12 @@ userRoute.post('/login', async (req, res) => {
 
         const { email, password } = parsedData.data;
 
-        const isUserExists = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
+        const isUserExists = await pool.query('SELECT id,name,email,password FROM users WHERE email=$1', [email]);
 
         if (isUserExists.rows.length === 0) {
             return res.status(401).json({
                 "success": false,
-                "error": "User Not Exists, Try SignIN"
+                "error": "User Not Exists, Try Signup"
             })
         }
 
@@ -109,9 +109,9 @@ userRoute.get('/me', AuthMiddleware, async (req, res) => {
     try {
         const userId = req.id;
 
-        const user = await pool.query("SELECT * FROM users WHERE id=$1", [userId]);
+        const user = await pool.query("SELECT id,name,email FROM users WHERE id=$1", [userId]);
 
-        if (!user) {
+        if (user.rows.length === 0) {
             return res.status(401).json({
                 "success": false,
                 "error": "User Not Found"
@@ -120,7 +120,7 @@ userRoute.get('/me', AuthMiddleware, async (req, res) => {
 
         return res.status(201).json({
             "success": true,
-            "user": user
+            "user": user.rows[0]
         })
     } catch (error) {
         return res.status(404).json({
