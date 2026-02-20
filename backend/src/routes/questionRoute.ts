@@ -16,26 +16,38 @@ questionRoute.post('/ask', AuthMiddleware, async (req, res) => {
             })
         }
 
-        const { title, description } = parsedData.data;
+        const { title, description, tagName } = parsedData.data;
+
+        let responseData = [];
 
         const userId = req.id;
+
+        await pool.query("BEGIN");
 
         const createQuestion = await pool.query('INSERT INTO questions("title", "description", "userid") VALUES($1, $2, $3) RETURNING id, title,description, userid, created_at',
             [title, description, userId]
         )
 
-        if (createQuestion.rows.length === 0) {
-            return res.status(401).json({
-                "success": false,
-                "error": "Question Cannot Be Created"
-            })
-        }
+        responseData.push(createQuestion.rows[0]);
 
-        return res.status(201).json({
+        const createTag = await pool.query('INSERT INTO tags("tag_name", "usage_count") VALUES($1, 1) ON CONFLICT ("tag_name") DO UPDATE SET usage_count = tags.usage_count + 1 RETURNING id, tag_name, usage_count', [tagName]);
+
+        responseData.push(createTag.rows[0]);
+
+        const questionId = createQuestion.rows[0].id;
+        const tagId = createTag.rows[0].id;
+
+        await pool.query('INSERT INTO questiontag("tagid", "questionid") VALUES($1, $2)', [tagId, questionId]);
+
+        await pool.query("COMMIT");
+
+         return res.status(201).json({
             "success": true,
-            "data": createQuestion.rows[0]
+            "data": responseData 
         })
+
     } catch (error) {
+        await pool.query("ROLLBACK"); 
         return res.status(401).json({
             "success": false,
             "error": { "Error While Creating Question": error }
@@ -47,6 +59,7 @@ questionRoute.get('/getQuestion/:questionId', AuthMiddleware, async (req, res) =
     try {
         const questionId = req.params.questionId;
 
+        // Implemented Pagination for Answers ORDER BY id ASC LIMIT 20.
         const getQuestionDetails = await pool.query(
             "SELECT u.id AS users_id, u.name AS users_name, q.id AS questions_id, q.title AS questions_title, q.description AS questions_description, q.created_at AS questions_created_at, a.id AS answers_id, a.userid AS answers_userid, a.answer AS answers_answer, a.created_at AS answers_created_at FROM questions q INNER JOIN users u ON q.userid = u.id  LEFT JOIN answers a ON q.id = a.questionid WHERE q.id = $1", [questionId]);
 
