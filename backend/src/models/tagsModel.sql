@@ -1,7 +1,7 @@
 
 CREATE TABLE tags (
     id SERIAL PRIMARY KEY NOT NULL,
-    tag TEXT NOT NULL UNIQUE,
+    tag_name TEXT NOT NULL UNIQUE,
     usage_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW()
 )

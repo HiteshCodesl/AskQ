@@ -1,0 +1,2 @@
+ALTER TABLE tags
+RENAME COLUMN tag TO tag_name;
