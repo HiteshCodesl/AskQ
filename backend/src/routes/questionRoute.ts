@@ -41,13 +41,13 @@ questionRoute.post('/ask', AuthMiddleware, async (req, res) => {
 
         await pool.query("COMMIT");
 
-         return res.status(201).json({
+        return res.status(201).json({
             "success": true,
-            "data": responseData 
+            "data": responseData
         })
 
     } catch (error) {
-        await pool.query("ROLLBACK"); 
+        await pool.query("ROLLBACK");
         return res.status(401).json({
             "success": false,
             "error": { "Error While Creating Question": error }
@@ -114,5 +114,37 @@ questionRoute.get('/getQuestion/:questionId', AuthMiddleware, async (req, res) =
         })
     }
 })
+
+questionRoute.get('/search', AuthMiddleware, async (req, res) => {
+    try {
+
+        const { searchText } = req.query || {};
+
+        console.log('title',searchText);
+
+        const fetchQuestionByQuery = await pool.query("SELECT DISTINCT q.*  FROM questions q   LEFT JOIN questiontag qt ON q.id = qt.questionid  LEFT JOIN tags t ON t.id = qt.tagid   WHERE q.title ILIKE '%' || $1 || '%'  OR  q.description ILIKE '%' || $1 || '%'  OR t.tag_name ILIKE '%' || $1 || '%'  ORDER BY q.created_at DESC", [searchText]);
+
+        console.log('FetchQuery Done', fetchQuestionByQuery.rows);
+
+        if (fetchQuestionByQuery.rows.length === 0) {
+            return res.status(404).json({
+                "success": false,
+                "error": "Cannot Get The Question"
+            })
+        }
+
+        return res.status(201).json({
+            "success": true,
+            "data": fetchQuestionByQuery.rows
+        })
+
+    } catch (error) {
+        return res.status(404).json({
+            "success": false,
+            "error": { "Error While Finding The Question": error }
+        })
+    }
+})
+
 
 export default questionRoute;
