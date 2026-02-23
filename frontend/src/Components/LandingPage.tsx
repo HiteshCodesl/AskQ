@@ -25,9 +25,9 @@ export default function LandingPage() {
       <main className="pt-20">
         <section className="min-h-screen flex items-center justify-center px-6 py-20 bg-gradient-to-br from-orange-50 via-white to-orange-50">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
+            <div className="space-y-8 ">
               
-              <h1 className="text-6xl lg:text-7xl font-bold text-gray-900 leading-tight" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 Ask Better
                 <span className="block text-orange-600">Questions</span>
               </h1>
@@ -36,7 +36,7 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                <Link to={'/dashboard'}>
-                <button className="bg-orange-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-orange-700 transition-all hover:scale-105 flex items-center justify-center gap-2 shadow-lg shadow-orange-600/30">
+                <button className="bg-orange-600 text-white px-12 py-4 rounded-xl font-semibold text-lg hover:bg-orange-700 transition-all hover:scale-105 flex items-center justify-center gap-2 shadow-lg shadow-orange-600/30">
                   Start Asking
                   <ArrowRight className="w-5 h-5" />
                 </button>
