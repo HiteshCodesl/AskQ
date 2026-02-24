@@ -55,6 +55,23 @@ questionRoute.post('/ask', AuthMiddleware, async (req, res) => {
     }
 })
 
+questionRoute.get('/allQuestion', async (req, res) => {
+    try {
+        const getQuestions = await pool.query('SELECT q.id AS questions_id, q.title AS questions_title, q.description AS questions_description, q.created_at AS questions_created_at, q.score AS questions_score, u.id AS users_id, u.name AS users_name  FROM questions q INNER JOIN users u ON q.userid = u.id LIMIT 10');
+
+        return res.status(201).json({
+            "success": true,
+            "data": getQuestions.rows
+        })
+
+    } catch (e) {
+        return res.status(400).json({
+            "success": false,
+            "error": e
+        })
+    }
+})
+
 questionRoute.get('/getQuestion/:questionId', AuthMiddleware, async (req, res) => {
     try {
         const questionId = req.params.questionId;
@@ -120,7 +137,7 @@ questionRoute.get('/search', AuthMiddleware, async (req, res) => {
 
         const { searchText } = req.query || {};
 
-        console.log('title',searchText);
+        console.log('title', searchText);
 
         const fetchQuestionByQuery = await pool.query("SELECT DISTINCT q.*  FROM questions q   LEFT JOIN questiontag qt ON q.id = qt.questionid  LEFT JOIN tags t ON t.id = qt.tagid   WHERE q.title ILIKE '%' || $1 || '%'  OR  q.description ILIKE '%' || $1 || '%'  OR t.tag_name ILIKE '%' || $1 || '%'  ORDER BY q.created_at DESC", [searchText]);
 
@@ -145,6 +162,7 @@ questionRoute.get('/search', AuthMiddleware, async (req, res) => {
         })
     }
 })
+
 
 
 export default questionRoute;
