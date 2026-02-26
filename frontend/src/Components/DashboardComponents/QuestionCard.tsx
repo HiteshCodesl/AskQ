@@ -40,7 +40,7 @@ export default function QuestionCard() {
         })
         console.log("Response", response.data);
         if (response.data.success === true) {
-            setQuestions(questions => questions.map(q => q.questions_id === questionId ? { ...q, questions_score: q.questions_score + 1 } : q));
+            setQuestions(questions => questions.map(q => q.questions_id === questionId ? { ...q, questions_score: q.questions_score + voteType } : q));
             toast.success("Upvoted Successfully");
         } else {
             toast.error("Failed To Upvote");
