@@ -2,6 +2,7 @@ import express from "express"
 import { askQuestionSchema } from "../utils/questionTypes.js";
 import { AuthMiddleware } from "../middleware/auth.js";
 import pool from "../db/db.js";
+import { optionalAuthMiddleware } from "../middleware/optionalAuth.js";
 
 const questionRoute = express.Router();
 
@@ -55,13 +56,15 @@ questionRoute.post('/ask', AuthMiddleware, async (req, res) => {
     }
 })
 
-questionRoute.get('/allQuestion', async (req, res) => {
+questionRoute.get('/allQuestion', optionalAuthMiddleware, async (req, res) => {
+   const userId = req.id ?? null;
+
     try {
-        const getQuestions = await pool.query('SELECT q.id AS questions_id, q.title AS questions_title, q.description AS questions_description, q.created_at AS questions_created_at, q.score AS questions_score, u.id AS users_id, u.name AS users_name  FROM questions q INNER JOIN users u ON q.userid = u.id LIMIT 10');
+        const getQuestions = await pool.query('SELECT q.id AS questions_id, q.title AS questions_title, q.description AS questions_description, q.created_at AS questions_created_at, q.score AS questions_score, u.id AS users_id, u.name AS users_name, qv.userid AS questionvote_userid, COALESCE(qv.vote_type, 0) AS users_vote   FROM questions q  LEFT JOIN users u ON q.userid = u.id   LEFT JOIN questionvote qv ON qv.questionid = q.id AND qv.userid = $1 LIMIT 10', [userId]);
 
         return res.status(201).json({
             "success": true,
-            "data": getQuestions.rows
+            "questions": getQuestions.rows
         })
 
     } catch (e) {
