@@ -1,4 +1,4 @@
-import { CircleArrowDown, CircleArrowUp, MessageCircle, User } from "lucide-react";
+import { CircleArrowDown, CircleArrowUp, MessageCircle, User, Vote } from "lucide-react";
 import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -13,7 +13,9 @@ interface question {
     questions_created_at: string,
     questions_score: number,
     users_id: number,
-    users_name: string
+    users_name: string,
+    users_vote: number
+    questionvote_userid : number,
 }
 export default function QuestionCard() {
 
@@ -28,22 +30,33 @@ export default function QuestionCard() {
             }
         }
         getAllQuestions();
-
     }, [])
 
-    const upvoteQuestion = async (questionId: number, voteType: number) => {
+    const upvoteQuestion = async (questionId: number, newVote: number) => {
+
+        const oldVote = questions.find(q => q.questions_id == questionId)?.users_vote || 0;
+
+        if(!oldVote){ 
+            return;
+        }        
+        const delta = newVote - oldVote;
+        
+        setQuestions(prev => prev.map(q => q.questions_id === questionId ? {...q, questions_score : q.questions_score + delta, users_vote : newVote }: q))
+
+        console.log("Frontend State Updated");
+
         console.log("Request send")
-        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/vote/questionVote/${questionId}`, {voteType}, {
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/vote/questionVote/${questionId}`, { voteType: newVote}, {
             headers : {
                 'Authorization': localStorage.getItem('token')
             }
         })
         console.log("Response", response.data);
         if (response.data.success === true) {
-            setQuestions(questions => questions.map(q => q.questions_id === questionId ? { ...q, questions_score: q.questions_score + voteType } : q));
-            toast.success("Upvoted Successfully");
+           console.log("Vote Changed successFully")
         } else {
-            toast.error("Failed To Upvote");
+         toast("Failed to Vote")
+        setQuestions(prev => prev.map(q => q.questions_id === questionId ? {...q, questions_score : q.questions_score - delta, users_vote : oldVote }: q))
         }
     }
 
